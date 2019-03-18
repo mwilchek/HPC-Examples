@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <omp.h>
 #include "get_data.h"
 
 int main (int argc, char **argv)
@@ -58,9 +59,14 @@ int main (int argc, char **argv)
 //
 // Parellelize the following using either parallel for pragmas or omp sections
 //
-
+#pragma omp parallel
+{
+#pragma omp sections private(meanY)
+{
 /* Get Sum */
 /* Parallelize This */
+#pragma omp section
+{
   double sum = 0.;
   tOne = clock();
   
@@ -72,10 +78,12 @@ int main (int argc, char **argv)
   tOne = clock() - tOne;
   printf("Sum Y: %g \n", sum );
   double time_takenOne = ((double)tOne)/CLOCKS_PER_SEC; // in seconds
-  printf("Total Execution Time for Get SUM(Original): %f seconds \n", time_takenOne);  
-
+  printf("Total Execution Time for Get SUM(OMP SECTION): %f seconds \n", time_takenOne);  
+}
 /* Get Mean Value */
 /* Parallelize This */
+#pragma omp section
+{
   tTwo = clock();
 
   for ( int i = 0; i < ts.ROWS ; i++)
@@ -88,10 +96,12 @@ int main (int argc, char **argv)
   
   tTwo = clock() - tTwo;
   double time_takenTwo = ((double)tTwo)/CLOCKS_PER_SEC; // in seconds
-  printf("Total Execution Time for Get MEAN(Original): %f seconds \n", time_takenTwo);
-
+  printf("Total Execution Time for Get MEAN(OMP SECTION): %f seconds \n", time_takenTwo);
+}
 /* Get Minimum */
 /* Parallelize This */
+#pragma omp section
+{
   double Min;
   Min = signal[0];
   tThree = clock();
@@ -105,10 +115,12 @@ int main (int argc, char **argv)
 
   tThree = clock() - tThree;
   double time_takenThree = ((double)tThree)/CLOCKS_PER_SEC; // in seconds
-  printf("Total Execution Time for Get Min(Original): %f seconds \n", time_takenThree);
-
+  printf("Total Execution Time for Get Min(OMP SECTION): %f seconds \n", time_takenThree);
+}
 /* Get Max */
 /* Parallelize This */
+#pragma omp section
+{
   double Max;
   Max = signal[0];
   tFour = clock();
@@ -121,10 +133,12 @@ int main (int argc, char **argv)
 
   tFour = clock() - tFour;
   double time_takenFour = ((double)tFour)/CLOCKS_PER_SEC; // in seconds
-  printf("Total Execution Time for Get Max(Original): %f seconds \n", time_takenFour);
-
+  printf("Total Execution Time for Get Max(OMP SECTION): %f seconds \n", time_takenFour);
+}
 /* Get Variance */
 /* Parallelize This */
+#pragma omp section
+{
   double variance = 0.;
   meanY = 0; // reinitialize meanY
   tFive = clock();
@@ -144,8 +158,11 @@ int main (int argc, char **argv)
 
   tFive = clock() - tFive;
   double time_takenFive = ((double)tFive)/CLOCKS_PER_SEC; // in seconds
-  printf("Total Execution Time for Get Variance(Original): %f seconds \n", time_takenFive);
+  printf("Total Execution Time for Get Variance(OMP SECTION): %f seconds \n", time_takenFive);
+}
 
+}
+}
  
   free( index );
   free( signal );  
