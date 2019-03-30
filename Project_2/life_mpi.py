@@ -87,7 +87,7 @@ M[:, 0] = 0
 M[:, COLS - 1] = 0
 
 initM = numpy.copy(M)
-print("First Generation")
+print("First Generation for rank: " + str(rank))
 
 generation = 0
 ims = []
