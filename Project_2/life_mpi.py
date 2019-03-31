@@ -39,7 +39,7 @@ def msgDn(subGrid):
 
 
 def computeGridPoints(subGrid):
-    for subROWelem in range(1, subROWS + 1):
+    for subROWelem in range(1, subROWS):
         for COLelem in range(1, COLS - 1):
 
             try:
@@ -108,11 +108,6 @@ subGrid = numpy.zeros((subROWS, COLS))
 # from relaxation.py. This script should not
 # have any boundary conditions
 # BC for all ranks.
-subGrid[:, 0] = 1
-
-# BC for rank 0.
-if rank == 0:
-    subGrid[0, :] = 1
 
 # The main body of the algorithm
 # compute new grid and pass rows to neighbors
