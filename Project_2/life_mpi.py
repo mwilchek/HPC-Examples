@@ -41,23 +41,33 @@ def msgDn(subGrid):
 def computeGridPoints(subGrid):
     for subROWelem in range(1, subROWS + 1):
         for COLelem in range(1, COLS - 1):
-            sum = (subGrid[subROWelem - 1, COLelem - 1] + subGrid[subROWelem - 1, COLelem] + subGrid[subROWelem - 1, COLelem + 1]
-                   + subGrid[subROWelem, COLelem - 1] + subGrid[subROWelem, COLelem + 1]
-                   + subGrid[subROWelem + 1, COLelem - 1] + subGrid[subROWelem + 1, COLelem] + subGrid[subROWelem + 1, COLelem + 1])
 
-            if subGrid[subROWelem, COLelem] == 1:
-                if sum < 2:
-                    intermediateM[subROWelem, COLelem] = 0
-                elif sum > 3:
-                    intermediateM[subROWelem, COLelem] = 0
-                else:
-                    intermediateM[subROWelem, COLelem] = 1
+            try:
+                sum = (subGrid[subROWelem - 1, COLelem - 1] + subGrid[subROWelem - 1, COLelem] + subGrid[subROWelem - 1, COLelem + 1]
+                       + subGrid[subROWelem, COLelem - 1] + subGrid[subROWelem, COLelem + 1]
+                       + subGrid[subROWelem + 1, COLelem - 1] + subGrid[subROWelem + 1, COLelem] + subGrid[subROWelem + 1, COLelem + 1])
+            except IndexError:
+                pass
 
-            if subGrid[subROWelem, COLelem] == 0:
-                if sum == 3:
-                    intermediateM[subROWelem, COLelem] = 1
-                else:
-                    intermediateM[subROWelem, COLelem] = 0
+            try:
+                if subGrid[subROWelem, COLelem] == 1:
+                    if sum < 2:
+                        intermediateM[subROWelem, COLelem] = 0
+                    elif sum > 3:
+                        intermediateM[subROWelem, COLelem] = 0
+                    else:
+                        intermediateM[subROWelem, COLelem] = 1
+            except IndexError:
+                pass
+
+            try:
+                if subGrid[subROWelem, COLelem] == 0:
+                    if sum == 3:
+                        intermediateM[subROWelem, COLelem] = 1
+                    else:
+                        intermediateM[subROWelem, COLelem] = 0
+            except IndexError:
+                pass
 
     return 0
 
@@ -97,6 +107,12 @@ subGrid = numpy.zeros((subROWS, COLS))
 # Skipping logic from lines 68-74
 # from relaxation.py. This script should not
 # have any boundary conditions
+# BC for all ranks.
+subGrid[:, 0] = 1
+
+# BC for rank 0.
+if rank == 0:
+    subGrid[0, :] = 1
 
 # The main body of the algorithm
 # compute new grid and pass rows to neighbors
