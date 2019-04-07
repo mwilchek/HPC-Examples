@@ -1,4 +1,5 @@
 import numpy
+import time
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from tqdm import tqdm
@@ -10,8 +11,9 @@ rank = comm.Get_rank()
 stat = MPI.Status()
 
 fig = plt.figure()
+start = time.time()
 
-prob = 0.7
+prob = 0.1
 COLS = 400
 ROWS = 198
 
@@ -22,8 +24,8 @@ subROWS = ROWS // size + 2
 
 generations = 200
 
+
 # Function definitions
-# @profile
 def msgUp(subGrid):
     # Sends and Recvs rows with Rank+1
     comm.send(subGrid[subROWS - 2, :], dest=rank + 1)
@@ -40,12 +42,14 @@ def msgDn(subGrid):
 
 def computeGridPoints(subGrid):
     for subROWelem in range(1, subROWS):
-        for COLelem in range(1, COLS - 1):
+        for COLelem in range(1, COLS):
 
             try:
-                sum = (subGrid[subROWelem - 1, COLelem - 1] + subGrid[subROWelem - 1, COLelem] + subGrid[subROWelem - 1, COLelem + 1]
+                sum = (subGrid[subROWelem - 1, COLelem - 1] + subGrid[subROWelem - 1, COLelem] + subGrid[
+                    subROWelem - 1, COLelem + 1]
                        + subGrid[subROWelem, COLelem - 1] + subGrid[subROWelem, COLelem + 1]
-                       + subGrid[subROWelem + 1, COLelem - 1] + subGrid[subROWelem + 1, COLelem] + subGrid[subROWelem + 1, COLelem + 1])
+                       + subGrid[subROWelem + 1, COLelem - 1] + subGrid[subROWelem + 1, COLelem] + subGrid[
+                           subROWelem + 1, COLelem + 1])
             except IndexError:
                 pass
 
@@ -102,7 +106,7 @@ print("First Generation for rank: " + str(rank))
 generation = 0
 ims = []
 
-subGrid = numpy.zeros((subROWS, COLS))
+subGrid = numpy.random.binomial(1, prob, (subROWS, COLS))
 
 # Skipping logic from lines 68-74
 # from relaxation.py. This script should not
@@ -112,7 +116,7 @@ subGrid = numpy.zeros((subROWS, COLS))
 # The main body of the algorithm
 # compute new grid and pass rows to neighbors
 oldGrid = comm.gather(subGrid[1:subROWS - 1, :], root=0)
-for i in tqdm(range(generations)):
+for i in tqdm(range(1, generations)):
     generation = generation + 1
     if i % 10 == 0:
         newGrid = comm.gather(subGrid[1:subROWS - 1, :], root=0)
@@ -146,5 +150,6 @@ if rank == 0:
     print("Present Generation = %d" % generation)
     ani = animation.ArtistAnimation(fig, ims, interval=25, blit=True, repeat_delay=500)
     # ani.save('animate_life.mp4')
-
+    end = time.time()
+    print("Total time of execution is: " + str(end - start))
     plt.show()
