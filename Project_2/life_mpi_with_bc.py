@@ -13,7 +13,7 @@ stat = MPI.Status()
 fig = plt.figure()
 start = time.time()
 
-prob = 0.1
+prob = 0.2
 COLS = 400
 ROWS = 198
 
