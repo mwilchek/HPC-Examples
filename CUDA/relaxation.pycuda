@@ -1,0 +1,57 @@
+import pycuda.driver as cuda
+import pycuda.autoinit  
+from pycuda.compiler import SourceModule
+
+import numpy
+
+COLS = 10000+2
+ROWS = 10000+2
+
+M=numpy.zeros((ROWS,COLS))
+M[0,:] = 20.
+M[:,0] = 20.
+
+M	   =M.reshape(1,COLS*ROWS)
+M          = M.astype(numpy.float32)
+M_next     = numpy.copy(M)
+M_next     = M_next.astype(numpy.float32)
+M_gpu      = cuda.mem_alloc(M.nbytes)
+M_next_gpu = cuda.mem_alloc(M.nbytes)
+
+print(M.reshape(ROWS,COLS))
+
+cuda.memcpy_htod(M_gpu, M)
+cuda.memcpy_htod(M_next_gpu, M)
+
+mod = SourceModule("""
+	__global__ void compute_gridpoints_GPU(float * __restrict grid, float * __restrict grid_next, const int ROWS, const int COLS)
+	{
+	  int i = threadIdx.x+ blockIdx.x* blockDim.x;
+	  int j = threadIdx.y+ blockIdx.y* blockDim.y;
+
+          if (i < ROWS - 1 && j < COLS - 1 && i > 0 && j > 0)
+            grid_next[i * COLS + j] = (grid[i * COLS + (j - 1)] + grid[i * COLS + (j + 1)] + grid[(i - 1) * COLS + j] + grid[(i + 1) * COLS + j] ) * 0.25;
+
+	}
+    """)
+
+# Using square 32x32 tiles to cover 10002x10002 grid. 
+blockx = COLS/ 32 + 1
+blocky = ROWS/ 32 + 1
+print(blockx,blocky)
+
+func = mod.get_function("compute_gridpoints_GPU")
+for i in range(1000):
+	func(M_gpu,M_next_gpu,numpy.int32(ROWS),numpy.int32(COLS), block=(32, 32, 1), grid=(blockx,blocky), shared=0)	
+	temp = M_gpu
+	M_gpu = M_next_gpu		
+	M_next_gpu = temp
+
+cuda.memcpy_dtoh(M, M_gpu)
+
+with open('pycuda_relax.dat', 'w') as f:
+    for item in M:
+        f.write("%s\n" % item)
+
+print(M.reshape(ROWS,COLS))
+
