@@ -31,6 +31,7 @@ cuda.memcpy_htod(M_gpu, M)
 cuda.memcpy_htod(M_next_gpu, M)
 
 # Create and register a generic function (this is C for CUDA to interpret)
+# The data manipulation function must be done in C
 mod = SourceModule("""
 	
 	__global__ void compute_gridpoints_GPU(float * __restrict grid, float * __restrict grid_next, const int ROWS, const int COLS)
