@@ -7,23 +7,32 @@ import numpy
 COLS = 10000+2
 ROWS = 10000+2
 
+# Create a 2d array
 M=numpy.zeros((ROWS,COLS))
 M[0,:] = 20.
 M[:,0] = 20.
 
+# reshape to a row vector
 M	   =M.reshape(1,COLS*ROWS)
+
+# convert to single precision from 64 to 32
 M          = M.astype(numpy.float32)
 M_next     = numpy.copy(M)
 M_next     = M_next.astype(numpy.float32)
+
+# Allocate space for the amtrix on the GPU
 M_gpu      = cuda.mem_alloc(M.nbytes)
 M_next_gpu = cuda.mem_alloc(M.nbytes)
 
 print(M.reshape(ROWS,COLS))
 
+# declared 2 row vectors on the card itself; 2 rows populated with data
 cuda.memcpy_htod(M_gpu, M)
 cuda.memcpy_htod(M_next_gpu, M)
 
+# Create and register a generic function (this is C for CUDA to interpret)
 mod = SourceModule("""
+	
 	__global__ void compute_gridpoints_GPU(float * __restrict grid, float * __restrict grid_next, const int ROWS, const int COLS)
 	{
 	  int i = threadIdx.x+ blockIdx.x* blockDim.x;
@@ -35,20 +44,27 @@ mod = SourceModule("""
 	}
     """)
 
-# Using square 32x32 tiles to cover 10002x10002 grid. 
+# Using square 32x32 tiles to cover 10002x10002 grid. The 1 allows the grid to be covered entirely
 blockx = COLS/ 32 + 1
 blocky = ROWS/ 32 + 1
 print(blockx,blocky)
 
+i32ROWS = numpy.int32(ROWS)
+i32COLS = numpy.int32(COLS)
+
+# Load function into memory
 func = mod.get_function("compute_gridpoints_GPU")
+
+# Run it 1000 times on the GPU
 for i in range(1000):
-	func(M_gpu,M_next_gpu,numpy.int32(ROWS),numpy.int32(COLS), block=(32, 32, 1), grid=(blockx,blocky), shared=0)	
+	func(M_gpu,M_next_gpu,i32ROWS,i32COLS, block=(32, 32, 1), grid=(blockx,blocky), shared=0)	
 	temp = M_gpu
 	M_gpu = M_next_gpu		
 	M_next_gpu = temp
 
 cuda.memcpy_dtoh(M, M_gpu)
 
+# Write results to a file
 with open('pycuda_relax.dat', 'w') as f:
     for item in M:
         f.write("%s\n" % item)
